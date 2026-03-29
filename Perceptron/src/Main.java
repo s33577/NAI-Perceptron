@@ -1,6 +1,6 @@
 import java.io.BufferedReader;
+import java.io.FileReader; // <-- Added this import
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.*;
 
 public class Main {
@@ -10,18 +10,59 @@ public class Main {
     static Map<String, Integer> labeltoBin = new HashMap<>();
     static Map<Integer, String> bintoLabel = new HashMap<>();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Scanner input = new Scanner(System.in);
 
-    }
+        System.out.print("training file path: ");
+        String filePath = input.nextLine();
+        System.out.print("learing rate (alpha): ");
+        double alpha = Double.parseDouble(input.nextLine());
 
+        System.out.print("Number of training epochs: ");
+        int epochs = Integer.parseInt(input.nextLine());
+
+        trainPerceptron(filePath, alpha, epochs);
+
+        while (true) {
+            System.out.print("\n(1) Test a custom vector\n(2) Test a file set\n(3) Exit\nChoice: ");
+            String choice = input.nextLine();
+
+            if (choice.equals("1")) {
+                System.out.print("Enter comma-separated values for the vector: ");
+                String[] parts = input.nextLine().split(",");
+                double[] testVector = new double[parts.length];
+                for (int i = 0; i < parts.length; i++) {
+                    testVector[i] = Double.parseDouble(parts[i].trim());
+                }
+
+                if (testVector.length != weights.length) {
+                    System.out.println("Error: Vector size must be " + weights.length);
+                    continue;
+                }
+
+                String result = predict(testVector);
+                System.out.println("Predicted Class: " + result);
+
+            } else if (choice.equals("2")) {
+                System.out.print("Provide the testing file path: ");
+                String testFile = input.nextLine();
+                testPerecepton(testFile);
+            } else if (choice.equals("3")) {
+                break;
+            } else {
+                System.out.println("Invalid choice.");
+            }
+        }
+        input.close();
+    }
 
     //load data
     static void trainPerceptron(String trainFile, double alpha, int epochs) throws IOException {
         List<double[]> trainingFeatures = new ArrayList<>();
         List<Integer> exOutputs = new ArrayList<>();
 
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+        BufferedReader br = new BufferedReader(new FileReader(trainFile));
         String line;
 
         while ((line = br.readLine()) != null) {
@@ -35,7 +76,9 @@ public class Main {
 
             }
             String stringLabel = parts[parts.length - 1].trim();
-            if (labeltoBin.containsKey(stringLabel)) {
+
+            // FIX: Added '!' to check if it does NOT contain the key
+            if (!labeltoBin.containsKey(stringLabel)) {
                 int binVal = labeltoBin.size();
                 if (binVal > 1) {
                     System.out.println("Perceptron only supports 2 classes. found extra class: " + stringLabel);
@@ -53,6 +96,7 @@ public class Main {
 
         if (trainingFeatures.isEmpty()) {
             System.out.println("Training file is empty.");
+            return;
         }
 
         // Weights
@@ -72,7 +116,8 @@ public class Main {
 
                 double net = 0.0;
 
-                for (int j = 0; j < d; j++) {
+                // FIX: Loop up to x.length instead of 'd'
+                for (int j = 0; j < x.length; j++) {
                     net += weights[j] * x[j];
                 }
 
@@ -81,7 +126,7 @@ public class Main {
                 int y = (net >= 0) ? 1 : 0;
 
                 //delta update
-                double error = d- y;
+                double error = d - y;
                 for (int j = 0; j < weights.length; j++) {
                     weights[j] = weights[j] + alpha * error * x[j];
                 }
@@ -89,8 +134,6 @@ public class Main {
             }
         }
         System.out.println("Training complete. Learned weights: " + Arrays.toString(weights) + " Bias: " + theta);
-
-
     }
 
     static String predict(double[] features) {
@@ -103,8 +146,10 @@ public class Main {
         return bintoLabel.get(y);
     }
 
-    static void testPerecepton(String trainFile) throws IOException {
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    //
+    static void testPerecepton(String testFile) throws IOException {
+        //
+        BufferedReader br = new BufferedReader(new FileReader(testFile));
         String line;
         int correct = 0;
         int total = 0;
@@ -131,10 +176,5 @@ public class Main {
 
         System.out.println("Correct: " + correct + " out of " + total);
         System.out.println("Accuracy: " + (double) correct / (double) total);
-
-
     }
-
-
-
 }
